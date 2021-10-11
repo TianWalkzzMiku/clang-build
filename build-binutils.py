@@ -174,7 +174,7 @@ def invoke_configure(binutils_folder, build_folder, install_folder, target,
             f'CXXFLAGS=-flto -O3 -pipe -ffunction-sections -fdata-sections -march={host_arch} -mtune={host_arch}'
         ]
     else:
-        configure += ['CFLAGS=-flto -O3 -pipe -ffunction-sections -fdata-sections', 'CXXFLAGS=-flto -O3 -pipe -ffunction-sections -fdata-sections']
+        configure += ['CFLAGS=-flto -O3 -pipe -ffunction-sections -fdata-sections', 'CXXFLAGS=-flto -O3 -pipe -ffunction-sections -fdata-sections', 'LDFLAGS=-O3']
 
     configure_arch_flags = {
         "arm-linux-gnueabi": [
