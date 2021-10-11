@@ -160,7 +160,7 @@ def invoke_configure(binutils_folder, build_folder, install_folder, target,
     :param host_arch: Host architecture to optimize for
     """
     configure = [
-        binutils_folder.joinpath("configure"), 'CC=gcc', 'CXX=g++',
+        binutils_folder.joinpath("configure"), 'CC=gcc', 'CXX=g++', '--enable-lto',
         '--disable-compressed-debug-sections', '--disable-gdb',
         '--disable-werror', '--enable-deterministic-archives',
         '--enable-new-dtags', '--enable-plugins', '--enable-threads',
@@ -170,11 +170,11 @@ def invoke_configure(binutils_folder, build_folder, install_folder, target,
         configure += [f'--prefix={install_folder}']
     if host_arch:
         configure += [
-            f'CFLAGS=-O3 -march={host_arch} -mtune={host_arch}',
-            f'CXXFLAGS=-O3 -march={host_arch} -mtune={host_arch}'
+            f'CFLAGS=-flto -O3 -march={host_arch} -mtune={host_arch}',
+            f'CXXFLAGS=-flto -O3 -march={host_arch} -mtune={host_arch}'
         ]
     else:
-        configure += ['CFLAGS=-O3', 'CXXFLAGS=-O3']
+        configure += ['CFLAGS=-flto -O3', 'CXXFLAGS=-flto -O3']
 
     configure_arch_flags = {
         "arm-linux-gnueabi": [
