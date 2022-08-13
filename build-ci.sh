@@ -48,7 +48,7 @@ msg "Building LLVM..."
 ./build-llvm.py \
 	--clang-vendor "WeebX" \
 	--defines "LLVM_PARALLEL_COMPILE_JOBS=$(nproc) LLVM_PARALLEL_LINK_JOBS=$(nproc) CMAKE_C_FLAGS=-O3 CMAKE_CXX_FLAGS=-O3" \
-	--projects "clang;compiler-rt;lld;polly" \
+	--projects "clang;lld;polly" \
 	--targets "ARM;AArch64;X86" \
 	--shallow-clone \
 	--incremental \
