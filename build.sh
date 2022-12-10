@@ -19,6 +19,12 @@ fi
 # Home directory
 HOME="$(pwd)"
 
+update_pkg(){
+    # Update packages
+    msg "* Update packages"
+    sudo apt-get update && upgrade -y
+}
+
 deps() {
     # Install/update dependency
     msg "* Install/update dependency"
@@ -193,6 +199,7 @@ push() {
     }
 
 # Let's goo
+update_pkg
 deps
 build
 push
