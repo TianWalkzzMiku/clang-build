@@ -382,6 +382,13 @@ def parse_parameters(root_folder):
                                  'kernel-allmodconfig-slim',
                                  'kernel-allyesconfig-slim', 'llvm'
                              ])
+    parser.add_argument("--quiet-cmake",
+                        help=textwrap.dedent("""\
+                        By default, the script shows all output from cmake. When this option is enabled, the
+                        invocations of cmake will only show warnings and errors.
+
+                        """),
+                        action="store_true")
     clone_options.add_argument("-s",
                                "--shallow-clone",
                                help=textwrap.dedent("""\
@@ -620,10 +627,9 @@ def ref_exists(repo, ref):
     return True
 
 
-def fetch_llvm_binutils(root_folder, llvm_folder, update, shallow, ref):
+def fetch_llvm(llvm_folder, update, shallow, ref):
     """
-    Download llvm and binutils or update them if they exist
-    :param root_folder: Working directory
+    Download llvm if it does not exist, update it if it does
     :param llvm_folder: llvm-project repo directory
     :param update: Boolean indicating whether sources need to be updated or not
     :param ref: The ref to checkout the monorepo to
@@ -689,12 +695,6 @@ def fetch_llvm_binutils(root_folder, llvm_folder, update, shallow, ref):
         ]
         subprocess.run(git_clone_cmd, check=True)
         subprocess.run(["git", "checkout", ref], check=True, cwd=llvm_folder)
-
-    # One might wonder why we are downloading binutils in an LLVM build script :)
-    # We need it for the LLVMgold plugin, which can be used for LTO with ld.gold,
-    # which at the time of writing this, is how the Google Pixel 3 kernel is built
-    # and linked.
-    utils.download_binutils(root_folder)
 
 
 def cleanup(build_folder, incremental):
@@ -965,6 +965,11 @@ def project_cmake_defines(args, stage):
         # We don't need the sanitizers for the stage 1 bootstrap
         if bootstrap_stage(args, stage):
             defines['COMPILER_RT_BUILD_SANITIZERS'] = 'OFF'
+        # execinfo.h might not exist (Alpine Linux) but the GWP ASAN library
+        # depends on it. Disable the option to avoid breaking the build, the
+        # kernel does not depend on it.
+        if not pathlib.Path('/usr/include/execinfo.h').exists():
+            defines['COMPILER_RT_BUILD_GWP_ASAN'] = 'OFF'
 
     return defines
 
@@ -1073,11 +1078,6 @@ def stage_specific_cmake_defines(args, dirs, stage):
             if key not in str(args.defines):
                 defines[key] = ''
 
-        # For LLVMgold.so, which is used for LTO with ld.gold
-        defines['LLVM_BINUTILS_INCDIR'] = dirs.root_folder.joinpath(
-            utils.current_binutils(), "include")
-        defines['LLVM_ENABLE_PLUGINS'] = 'ON'
-
     return defines
 
 
@@ -1151,6 +1151,10 @@ def invoke_cmake(args, dirs, env_vars, stage):
     """
     # Add the defines, point them to our build folder, and invoke cmake
     cmake = ['cmake', '-G', 'Ninja', '-Wno-dev']
+
+    # Report only warnings and errors if running quietly.
+    if args.quiet_cmake:
+        cmake += ['--log-level=NOTICE']
 
     defines = build_cmake_defines(args, dirs, env_vars, stage)
     cmake += [f'-D{key}={val}' for key, val in defines.items()]
@@ -1548,28 +1552,19 @@ def main():
 
     args = parse_parameters(root_folder)
 
-    build_folder = pathlib.Path(args.build_folder)
-    if not build_folder.is_absolute():
-        build_folder = root_folder.joinpath(build_folder)
-
-    install_folder = pathlib.Path(args.install_folder)
-    if not install_folder.is_absolute():
-        install_folder = root_folder.joinpath(install_folder)
+    build_folder = pathlib.Path(args.build_folder).resolve()
+    install_folder = pathlib.Path(args.install_folder).resolve()
 
     linux_folder = None
     if args.linux_folder:
-        linux_folder = pathlib.Path(args.linux_folder)
-        if not linux_folder.is_absolute():
-            linux_folder = root_folder.joinpath(linux_folder)
+        linux_folder = pathlib.Path(args.linux_folder).resolve()
         if not linux_folder.exists():
             utils.print_error(
                 f"\nSupplied kernel source ({linux_folder}) does not exist!")
             sys.exit(1)
 
     if args.llvm_folder:
-        llvm_folder = pathlib.Path(args.llvm_folder)
-        if not llvm_folder.is_absolute():
-            llvm_folder = root_folder.joinpath(llvm_folder)
+        llvm_folder = pathlib.Path(args.llvm_folder).resolve()
         if not llvm_folder.exists():
             utils.print_error(
                 f"\nSupplied LLVM source ({llvm_folder}) does not exist!")
@@ -1620,8 +1615,7 @@ def main():
         ref = args.branch
 
     if not args.llvm_folder:
-        fetch_llvm_binutils(root_folder, llvm_folder, not args.no_update,
-                            args.shallow_clone, ref)
+        fetch_llvm(llvm_folder, not args.no_update, args.shallow_clone, ref)
     cleanup(build_folder, args.incremental)
     dirs = Directories(build_folder, install_folder, linux_folder, llvm_folder,
                        root_folder)
