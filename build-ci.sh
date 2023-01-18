@@ -42,7 +42,7 @@ if [ "${GITHUB_ACTIONS}" ]; then
 fi
 
 # Telegram Setup
-git clone --depth=1 https://github.com/XSans0/Telegram Telegram
+git clone --depth=1 https://github.com/TianWalkzzMiku/Telegram Telegram
 
 TELEGRAM="$DIR/Telegram/telegram"
 send_msg() {
@@ -123,11 +123,11 @@ TagsDate="$(TZ=Asia/Jakarta date +"%Y%m%d")"
 BuildDate="$(TZ=Asia/Jakarta date +"%Y-%m-%d")"
 ZipName="WeebX-Clang-$clang_version-${TagsDate}.tar.gz"
 Tags="WeebX-Clang-$clang_version-${TagsDate}-release"
-ClangLink="https://github.com/XSans0/WeebX-Clang/releases/download/${Tags}/${ZipName}"
+ClangLink="https://github.com/XSans0/SuperRyzen-Clang/releases/download/${Tags}/${ZipName}"
 
 # Git Config
-git config --global user.name "XSans0"
-git config --global user.email "xsansdroid@gmail.com"
+git config --global user.name "TianWalkzzMiku"
+git config --global user.email "whysdevsrk@gmail.com"
 
 pushd install || exit
 {
@@ -152,7 +152,7 @@ else
     echo "${BuildDate}" > "$clang_version"/build-date.txt
 fi
 git add .
-git commit -asm "WeebX-Clang-$clang_version: ${TagsDate}"
+git commit -asm "SuperRyzen-Clang-$clang_version: ${TagsDate}"
 git tag "${Tags}" -m "${Tags}"
 git push -f origin main
 git push -f origin "${Tags}"
@@ -162,7 +162,7 @@ chmod +x github-release
 ./github-release release \
     --security-token "$GIT_TOKEN" \
     --user XSans0 \
-    --repo WeebX-Clang \
+    --repo SuperRyzen-Clang \
     --tag "${Tags}" \
     --name "${Tags}" \
     --description "$(cat install/README.md)"
@@ -170,8 +170,8 @@ chmod +x github-release
 fail="n"
 ./github-release upload \
     --security-token "$GIT_TOKEN" \
-    --user XSans0 \
-    --repo WeebX-Clang \
+    --user TianWalkzzMiku \
+    --repo SuperRyzen-Clang \
     --tag "${Tags}" \
     --name "$ZipName" \
     --file "$ZipName" || fail="y"
@@ -181,8 +181,8 @@ UploadAgain()
 {
     GetRelease="$(./github-release upload \
         --security-token "$GIT_TOKEN" \
-        --user XSans0 \
-        --repo WeebX-Clang \
+        --user TianWalkzzMiku \
+        --repo SuperRyzen-Clang \
         --tag "${Tags}" \
         --name "$ZipName" \
         --file "$ZipName")"
@@ -222,6 +222,6 @@ send_msg "
 <b>Compile Based : </b>
 * <a href='$llvm_commit_url'>$llvm_commit_url</a>
 <b>Push Repository : </b>
-* <a href='https://github.com/XSans0/WeebX-Clang.git'>WeebX-Clang</a>
+* <a href='https://github.com/XSans0/SuperRyzen-Clang.git'>SuperRyzen-Clang</a>
 <b>--------------------------------------------------</b>
 "
